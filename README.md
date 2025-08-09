@@ -1,0 +1,702 @@
+<!-- perpus_full.html
+     Versi final: Login / Dashboard / Perpustakaan (tema: emas-marun elegan).
+     Libur nasional sampai 2026 sudah dimasukkan (sumber: SKB 3 Menteri + PublicHolidays).
+     Catatan: offline-ready; fitur XLSX/Chart/SheetJS bekerja bila online.
+-->
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Perpustakaan Rumah Baca Smanwar — Full (Emas-Marun)</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fff8f3;
+    --panel:#ffffff;
+    --muted:#7a6b5a;
+    --text:#2b1f17;
+    --accent:#b76e2c;      /* marun-gold accent */
+    --accent-2:#f2c77b;    /* golden */
+    --danger:#ef4444;
+    --glass: rgba(255,255,255,0.6);
+  }
+  .dark{ --bg:#1a1310; --panel:#0f0b09; --text:#f6efe6; --muted:#cdb99b; --accent:#b76e2c; --accent-2:#f2c77b; }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: linear-gradient(180deg, #fff7ee 0%, #f9efe3 50%, #efe1d3 100%);
+    color:var(--text); -webkit-font-smoothing:antialiased; padding:28px;
+  }
+
+  /* Container & layout */
+  .wrap{ max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 360px 1fr; gap:20px; align-items:start; min-height:80vh; }
+  .panel{ background:var(--panel); border-radius:14px; padding:18px; box-shadow: 0 10px 30px rgba(20,12,8,0.06); }
+  .sidebar{ position:sticky; top:28px; height:fit-content; }
+
+  /* Logo */
+  .brand{ display:flex; gap:12px; align-items:center; }
+  .brand .badge{ width:60px; height:60px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-size:18px; box-shadow:0 6px 18px rgba(183,110,44,0.18); }
+  .brand h1{ margin:0; font-size:16px; line-height:1.05; }
+  .muted{ color:var(--muted); font-size:13px; }
+
+  /* Nav */
+  nav{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .nav-btn{ display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; border:1px solid rgba(183,110,44,0.08); cursor:pointer; background:transparent; font-weight:600; color:var(--text); text-align:left; }
+  .nav-btn.active{ background: linear-gradient(90deg, rgba(183,110,44,0.12), rgba(242,199,123,0.06)); box-shadow: inset 0 0 0 1px rgba(183,110,44,0.03); }
+
+  /* Buttons */
+  .btn{ background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+  .btn.ghost{ background:transparent; border:1px solid rgba(0,0,0,0.06); color:var(--text); font-weight:600; }
+  .btn.warn{ background:var(--accent-2); color:#2b1f17; }
+
+  /* Header */
+  header.page-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+  header .title{ display:flex; gap:12px; align-items:center; }
+
+  /* Grid */
+  .grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px; }
+  .full{ grid-column:1/-1; }
+
+  /* Inputs */
+  input[type=text], input[type=date], select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #eee; font-size:14px; background:transparent; color:var(--text); }
+  input[type=file]{ padding:6px 0; }
+
+  /* Tables */
+  .table-wrap{ overflow-x:auto; margin-top:12px; }
+  table{ width:100%; border-collapse:collapse; min-width:720px; }
+  th, td{ text-align:left; padding:10px 12px; border-bottom:1px solid #f4efe8; font-size:14px; }
+  th{ background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; font-weight:700; position:sticky; top:0; }
+
+  /* Misc */
+  .search{ display:flex; gap:8px; align-items:center; }
+  .member-card{ display:flex; gap:12px; align-items:center; border-radius:10px; padding:10px; border:1px dashed rgba(0,0,0,0.04); }
+  .holiday-list{ max-height:160px; overflow:auto; border-radius:8px; padding:8px; border:1px solid #f1e6d7; background:linear-gradient(180deg, rgba(242,199,123,0.04), transparent); }
+  .holiday-item{ display:flex; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px dashed rgba(0,0,0,0.02); font-size:13px; }
+
+  /* Login page */
+  .center-wrap{ min-height:80vh; display:flex; align-items:center; justify-content:center; gap:20px; }
+  .login-card{ width:880px; display:grid; grid-template-columns: 360px 1fr; gap:24px; align-items:stretch; }
+  .hero{ border-radius:12px; padding:18px; color:#fff; display:flex; flex-direction:column; gap:12px; justify-content:center; background: linear-gradient(135deg, #7a3b2b, #b76e2c); box-shadow: 0 10px 40px rgba(183,110,44,0.18); }
+  .login-form{ padding:18px; border-radius:12px; background: linear-gradient(180deg,#fff,#fff9f3); }
+
+  /* Responsive */
+  @media (max-width:980px){
+    .wrap{ grid-template-columns: 1fr; padding:12px; }
+    .sidebar{ position:relative; top:0; display:flex; justify-content:space-between; }
+    .login-card{ grid-template-columns: 1fr; width:100%; }
+    table{ min-width:600px; }
+  }
+
+  /* small helpers */
+  .muted-small{ color:var(--muted); font-size:13px; }
+  .logo-warning{ color:#b45309; font-size:13px; display:none; }
+  .pill{ padding:6px 8px; border-radius:999px; background:rgba(0,0,0,0.03); font-weight:700; font-size:13px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<!-- ========= App Shell: multiple "pages" controlled by JS (login, dashboard, perpustakaan) ========= -->
+<div id="appRoot">
+
+  <!-- === LOGIN PAGE === -->
+  <section id="page-login" class="center-wrap" style="">
+    <div class="login-card panel" role="dialog" aria-modal="true">
+      <div class="hero">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="badge" style="width:72px;height:72px;border-radius:14px; font-size:20px; box-shadow:0 12px 30px rgba(183,110,44,0.18);">SMW</div>
+          <div>
+            <h2 style="margin:0; color:white">Perpustakaan Rumah Baca</h2>
+            <div style="color:#ffe9c9; font-weight:600">Smanwar — Sistem Peminjaman</div>
+          </div>
+        </div>
+        <p style="margin:0; color:rgba(255,233,200,0.95);">Masuk untuk mengelola data peminjaman, pengembalian, denda, dan kartu anggota. Sistem bekerja offline (penyimpanan lokal).</p>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <div class="pill">Tema: <strong>Emas-Marun</strong></div>
+          <div class="pill">Offline Ready</div>
+        </div>
+      </div>
+
+      <div class="login-form">
+        <h3 style="margin-top:0">Login</h3>
+        <div style="display:grid; gap:10px;">
+          <label class="muted-small">Username</label>
+          <input id="loginUser" type="text" placeholder="admin">
+          <label class="muted-small">Password</label>
+          <input id="loginPass" type="password" placeholder="password">
+          <div style="display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:6px">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <label style="font-size:13px; color:var(--muted)"><input id="rememberMe" type="checkbox"> Ingat saya</label>
+            </div>
+            <div>
+              <button class="btn" id="btnLogin">Masuk</button>
+            </div>
+          </div>
+
+          <div class="muted-small">Akun default: <strong>admin / admin123</strong>. Kamu bisa ubah daftar pengguna di bagian pengaturan (localStorage).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === MAIN APP (dashboard + sidebar) === -->
+  <div id="page-app" style="display:none;">
+    <div class="wrap">
+
+      <!-- Sidebar -->
+      <aside class="sidebar panel">
+        <div class="brand">
+          <div class="badge">SMW</div>
+          <div>
+            <h1>Perpustakaan<br><strong>Rumah Baca Smanwar</strong></h1>
+            <div class="muted">Sistem Peminjaman Lokal — Emas-Marun</div>
+          </div>
+        </div>
+
+        <nav style="margin-top:12px;">
+          <button class="nav-btn active" data-target="dashboard">🏠 Dashboard</button>
+          <button class="nav-btn" data-target="perpustakaan">📚 Perpustakaan</button>
+          <button class="nav-btn" data-target="kartuPage">🪪 Kartu Anggota</button>
+          <button class="nav-btn" data-target="holidaysPage">📅 Libur Nasional</button>
+          <button class="nav-btn" data-target="settingsPage">⚙️ Pengaturan</button>
+        </nav>
+
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" id="gotoPerpus">Buka Perpustakaan</button>
+          <button class="btn ghost" id="logoutBtn">Logout</button>
+        </div>
+
+        <hr style="margin:12px 0; border:none; height:1px; background: linear-gradient(90deg, rgba(183,110,44,0.06), transparent);">
+
+        <div class="muted-small">Backup</div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn" id="exportJsonBtnSide">Export JSON</button>
+          <button class="btn ghost" id="exportCsvBtnSide">Export CSV</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="muted-small">Logo</div>
+          <div class="muted">Simpan file <code>logo-smanwar.png</code> di folder yang sama untuk menampilkan logo.</div>
+        </div>
+      </aside>
+
+      <!-- Main content panels -->
+      <main style="min-height:400px;">
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="panel page" style="">
+          <header class="page-header">
+            <div class="title">
+              <div style="width:52px; height:52px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800">DB</div>
+              <div>
+                <h2 style="margin:0">Dashboard</h2>
+                <div class="muted-small">Ringkasan peminjaman & akses cepat</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <div class="muted-small" id="userBadge"></div>
+              <button class="btn ghost" onclick="navigate('perpustakaan')">Masuk Perpustakaan</button>
+            </div>
+          </header>
+
+          <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:12px;">
+            <div class="panel" style="text-align:left;">
+              <div style="font-weight:800; font-size:18px">Total Peminjaman</div>
+              <div id="statTotal" style="font-size:28px; margin-top:8px; color:var(--accent)"></div>
+              <div class="muted-small" style="margin-top:8px">Data disimpan di localStorage</div>
+            </div>
+
+            <div class="panel">
+              <div style="font-weight:800">Buku Populer</div>
+              <div id="topBooks" style="margin-top:8px; font-size:14px"></div>
+            </div>
+
+            <div class="panel">
+              <div style="font-weight:800">Aksi Cepat</div>
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button class="btn" onclick="navigate('perpustakaan')">Tambah Peminjaman</button>
+                <button class="btn ghost" onclick="exportAllCSV()">Export CSV</button>
+                <button class="btn ghost" onclick="clearLocalData()">Hapus Data</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-weight:800">Riwayat Peminjaman Terakhir</div>
+              <div class="muted-small">Klik baris untuk lihat/pengembalian</div>
+            </div>
+
+            <div class="table-wrap">
+              <table id="tableHome">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>Buku</th><th>Pinjam</th><th>Kembali</th><th>Denda</th><th>Aksi</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- PERPUSTAKAAN -->
+        <section id="perpustakaan" class="panel page" style="display:none;">
+          <header class="page-header">
+            <div class="title">
+              <div style="width:48px; height:48px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800">PB</div>
+              <div>
+                <h2 style="margin:0">Perpustakaan — Sistem Peminjaman</h2>
+                <div class="muted-small">Peminjaman, pengembalian, denda, export & cetak kartu</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+              <button class="btn ghost" onclick="navigate('dashboard')">Kembali</button>
+              <button class="btn" onclick="printPage()">Cetak</button>
+            </div>
+          </header>
+
+          <form id="peminjamanForm" style="margin-top:12px" class="panel">
+            <div class="grid">
+              <div>
+                <label class="muted-small">Kelas</label>
+                <select id="kelas">
+                  <option value="">-- Pilih Kelas --</option>
+                  <optgroup label="Kelas XE"><option>XE.1</option><option>XE.2</option><option>XE.3</option><option>XE.4</option><option>XE.5</option><option>XE.6</option><option>XE.7</option><option>XE.8</option></optgroup>
+                  <optgroup label="Kelas XI.F"><option>XI.F1</option><option>XI.F2</option><option>XI.F3</option><option>XI.F4</option><option>XI.F5</option><option>XI.F6</option><option>XI.F7</option></optgroup>
+                  <optgroup label="Kelas XII.F"><option>XII.F1</option><option>XII.F2</option><option>XII.F3</option><option>XII.F4</option><option>XII.F5</option><option>XII.F6</option><option>XII.F7</option><option>XII.F8</option></optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label class="muted-small">Nama Peminjam</label>
+                <input type="text" id="nama" placeholder="Nama lengkap" required>
+              </div>
+
+              <div>
+                <label class="muted-small">Buku (pilih atau ketik manual)</label>
+                <select id="daftarBuku" onchange="isiJudulOtomatis()">
+                  <option value="">-- Pilih Buku Kurikulum Merdeka / Novel --</option>
+                  <optgroup label="Kurikulum Merdeka">
+                    <option>PAIBP X</option><option>Pendidikan Pancasila X</option><option>Indonesia Kelas X</option><option>Matematika Umum Kelas X</option><option>IPS Kelas X</option>
+                    <option>B.Inggris Kelas X</option><option>Informatika Kelas X</option><option>PJOK Kelas X</option><option>IPA Kelas X</option><option>Inggris Umum Kelas X</option>
+                  </optgroup>
+                  <optgroup label="Novel">
+                    <option>Ayat-Ayat Cinta</option><option>Laskar Pelangi</option><option>Negeri 5 Menara</option><option>Bumi</option><option>Hujan</option><option>Surat Kecil untuk Tuhan</option><option value="Manual">-- Ketik Manual --</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="full">
+                <label class="muted-small">Judul (manual/otomatis)</label>
+                <input type="text" id="judul" placeholder="Atau ketik judul buku..." required>
+              </div>
+
+              <div>
+                <label class="muted-small">Tanggal Pinjam</label>
+                <input type="date" id="tglPinjam" required>
+              </div>
+              <div>
+                <label class="muted-small">Tanggal Kembali</label>
+                <input type="date" id="tglKembali" required>
+              </div>
+              <div>
+                <label class="muted-small">Nomor WhatsApp</label>
+                <input type="text" id="noWa" placeholder="08xxxxxxxx (opsional)">
+              </div>
+
+              <div class="full" style="display:flex; gap:12px;">
+                <button class="btn" type="submit">Simpan & Pinjam</button>
+                <button class="btn ghost" type="button" onclick="document.getElementById('peminjamanForm').reset()">Bersihkan</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="panel" style="margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-weight:800">Daftar Peminjaman</div>
+              <div class="muted-small">Gunakan tombol Export untuk backup</div>
+            </div>
+
+            <div class="table-wrap" style="margin-top:8px;">
+              <table id="tablePerpus">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>Buku</th><th>Pinjam</th><th>Kembali</th><th>Denda</th><th>Aksi</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- KARTU ANGGOTA -->
+        <section id="kartuPage" class="panel page" style="display:none;">
+          <header class="page-header">
+            <div class="title"><div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800">ID</div>
+            <div><h3 style="margin:0">Cetak Kartu Anggota</h3><div class="muted-small">Isi dan preview kartu</div></div></div>
+            <div><button class="btn ghost" onclick="navigate('dashboard')">Kembali</button></div>
+          </header>
+
+          <div class="panel" style="margin-top:12px;">
+            <div style="display:grid; gap:8px;">
+              <input id="memberNama" placeholder="Nama lengkap">
+              <input id="memberKelas" placeholder="Kelas (contoh: XE.1)">
+              <input id="memberNis" placeholder="Nomor Anggota / NIS">
+              <div style="display:flex; gap:8px;">
+                <button class="btn" onclick="previewCard()">Preview Kartu</button>
+                <button class="btn ghost" onclick="document.getElementById('previewArea').innerHTML='';document.getElementById('memberNama').value='';document.getElementById('memberKelas').value='';document.getElementById('memberNis').value=''">Reset</button>
+              </div>
+            </div>
+
+            <div id="previewArea" style="margin-top:12px"></div>
+          </div>
+        </section>
+
+        <!-- HOLIDAYS -->
+        <section id="holidaysPage" class="panel page" style="display:none;">
+          <header class="page-header"><div class="title"><h3 style="margin:0">Manage Libur Nasional</h3><div class="muted-small">Libur digunakan saat menghitung denda (Sabtu/Minggu & libur diabaikan).</div></div><div><button class="btn ghost" onclick="navigate('dashboard')">Kembali</button></div></header>
+
+          <div style="margin-top:12px;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="holidayDate" type="date">
+              <input id="holidayLabel" type="text" placeholder="Keterangan (contoh: Tahun Baru)">
+              <button class="btn" onclick="addHoliday()">Tambah</button>
+            </div>
+
+            <div style="margin-top:12px;">
+              <div class="holiday-list" id="holidayList"></div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button class="btn ghost" onclick="exportHolidays()">Export Libur</button>
+              <input type="file" id="importHolidayFile" accept=".json" />
+              <button class="btn ghost" onclick="clearHolidays()">Clear All</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="settingsPage" class="panel page" style="display:none;">
+          <header class="page-header"><div class="title"><h3 style="margin:0">Pengaturan</h3><div class="muted-small">Atur akun admin & preferensi</div></div><div><button class="btn ghost" onclick="navigate('dashboard')">Kembali</button></div></header>
+
+          <div class="panel" style="margin-top:12px;">
+            <div style="display:grid; gap:8px;">
+              <label class="muted-small">Ganti password admin</label>
+              <input id="setUser" placeholder="username">
+              <input id="setPass" placeholder="password">
+              <div style="display:flex; gap:8px;">
+                <button class="btn" onclick="saveCredentials()">Simpan Akun</button>
+                <button class="btn ghost" onclick="resetCredentials()">Reset ke default</button>
+              </div>
+              <div style="margin-top:8px; display:flex; gap:8px;">
+                <button class="btn ghost" id="exportJsonBtn">Export JSON</button>
+                <button class="btn ghost" id="exportXlsxBtn">Export XLSX (jika online)</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+</div>
+
+<!-- Optional libs (online) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+/* ===========================
+   App state & defaults
+   =========================== */
+const STATE_KEY = 'perpus_emasmrun_v1';
+let store = {
+  entries: [],
+  holidays: [
+    /* Libur Nasional — ringkasan 2025 & 2026 (diisi awal dari sumber SKB & publik). 
+       Pastikan menyesuaikan bila ada perubahan resmi. */
+    { date:'2025-01-01', label:'Tahun Baru 2025' },
+    { date:'2025-01-27', label:'Isra Miraj' },
+    { date:'2025-01-29', label:'Tahun Baru Imlek' },
+    { date:'2025-03-29', label:'Hari Suci Nyepi' },
+    { date:'2025-03-31', label:'Idul Fitri (Lebaran)'},
+    { date:'2025-04-01', label:'Idul Fitri (Lebaran)'},
+    { date:'2025-04-18', label:'Wafat Yesus Kristus' },
+    { date:'2025-04-20', label:'Paskah' },
+    { date:'2025-05-01', label:'Hari Buruh' },
+    { date:'2025-05-12', label:'Hari Raya Waisak' },
+    { date:'2025-05-29', label:'Kenaikan Isa Almasih' },
+    { date:'2025-06-01', label:'Hari Lahir Pancasila' },
+    { date:'2025-06-06', label:'Idul Adha (perkiraan)' }, // cek resmi
+    { date:'2025-07-17', label:'Tahun Baru Islam (perkiraan)' },
+    { date:'2025-08-17', label:'Hari Kemerdekaan RI' },
+    { date:'2025-09-05', label:'Maulid Nabi (perkiraan)' },
+    { date:'2025-12-25', label:'Hari Natal' },
+
+    /* 2026 */
+    { date:'2026-03-20', label:'Idul Fitri 2026' },
+    { date:'2026-03-21', label:'Cuti Bersama Lebaran 2026' },
+    { date:'2026-04-03', label:'Wafat Yesus Kristus' },
+    { date:'2026-05-01', label:'Hari Buruh' },
+    { date:'2026-05-14', label:'Kenaikan Isa Almasih' },
+    { date:'2026-05-27', label:'Idul Adha' },
+    { date:'2026-05-31', label:'Waisak' },
+    { date:'2026-06-01', label:'Hari Lahir Pancasila' },
+    { date:'2026-06-17', label:'Tahun Baru Islam' },
+    { date:'2026-08-17', label:'Hari Kemerdekaan RI' },
+    { date:'2026-08-25', label:'Maulid Nabi' },
+    { date:'2026-12-25', label:'Hari Natal' }
+  ],
+  meta: { users: [{user:'admin', pass:'admin123'}], theme:'emas' }
+};
+let myChart = null;
+
+/* ========= Storage ========= */
+function loadStore(){
+  const s = localStorage.getItem(STATE_KEY);
+  if(s){ try{ const parsed = JSON.parse(s); store = Object.assign(store, parsed); if(!store.entries) store.entries = []; if(!store.holidays) store.holidays = []; }catch(e){ console.warn('load err', e); } }
+}
+function saveStore(){ localStorage.setItem(STATE_KEY, JSON.stringify(store)); renderAll(); }
+
+/* ========= Auth (session simple) ========= */
+function saveSession(user){ localStorage.setItem('perpus_session', JSON.stringify({user, ts:Date.now()})); }
+function clearSession(){ localStorage.removeItem('perpus_session'); }
+function getSession(){ try{ return JSON.parse(localStorage.getItem('perpus_session')); }catch(e){ return null; } }
+function checkAuth(){ return !!getSession(); }
+
+/* ========= Navigation helpers ========= */
+function showLogin(){ document.getElementById('page-login').style.display='flex'; document.getElementById('page-app').style.display='none'; }
+function showApp(){ document.getElementById('page-login').style.display='none'; document.getElementById('page-app').style.display='block'; }
+function navigate(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  const el = document.getElementById(pageId);
+  if(el) el.style.display='';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=> { if(b.dataset.target===pageId) b.classList.add('active'); });
+  if(pageId==='dashboard') updateDashboard();
+}
+
+/* ========= Init UI actions ========= */
+document.getElementById('btnLogin').addEventListener('click', function(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const users = store.meta.users || [];
+  const found = users.find(x=>x.user===u && x.pass===p);
+  if(found){ saveSession(u); showApp(); navigate('dashboard'); document.getElementById('userBadge').textContent = u; } else { alert('Login gagal — periksa username/password. (default: admin / admin123)'); }
+});
+document.getElementById('logoutBtn').addEventListener('click', function(){ if(confirm('Logout sekarang?')){ clearSession(); showLogin(); } });
+document.getElementById('gotoPerpus').addEventListener('click', ()=> navigate('perpustakaan'));
+
+/* Sidebar nav */
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', ()=> navigate(b.dataset.target)));
+
+/* Settings: save credentials */
+function saveCredentials(){
+  const u = document.getElementById('setUser').value.trim() || 'admin';
+  const p = document.getElementById('setPass').value || 'admin123';
+  store.meta.users = [{ user:u, pass:p }];
+  saveStore();
+  alert('Akun diperbarui.');
+}
+function resetCredentials(){ store.meta.users = [{user:'admin', pass:'admin123'}]; saveStore(); alert('Direset ke admin/admin123'); }
+
+/* ========= Holidays (manage) ========= */
+function renderHolidays(){ const wrap = document.getElementById('holidayList'); wrap.innerHTML=''; if(!store.holidays.length){ wrap.innerHTML='<div class="muted-small">Belum ada libur.</div>'; return; } store.holidays.forEach((h,i)=>{ const d = document.createElement('div'); d.className='holiday-item'; d.innerHTML = `<div>${h.date} — ${escapeHtml(h.label)}</div><div><button class="btn ghost" onclick="removeHoliday(${i})">Hapus</button></div>`; wrap.appendChild(d); }); }
+function addHoliday(){
+  const d = document.getElementById('holidayDate').value;
+  const lbl = document.getElementById('holidayLabel').value.trim() || 'Libur';
+  if(!d){ alert('Pilih tanggal'); return; }
+  if(store.holidays.find(x=>x.date===d)){ alert('Tanggal sudah ada'); return; }
+  store.holidays.push({ date: d, label: lbl });
+  store.holidays.sort((a,b)=> a.date.localeCompare(b.date));
+  document.getElementById('holidayDate').value=''; document.getElementById('holidayLabel').value='';
+  saveStore();
+}
+function removeHoliday(idx){ if(confirm('Hapus libur ini?')){ store.holidays.splice(idx,1); saveStore(); } }
+function clearHolidays(){ if(confirm('Hapus semua libur?')){ store.holidays = []; saveStore(); } }
+function exportHolidays(){ const blob = new Blob([JSON.stringify(store.holidays,null,2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='holidays.json'; a.click(); }
+
+/* Import holidays file */
+document.getElementById('importHolidayFile').addEventListener('change', function(e){
+  const f = this.files[0]; if(!f) return; const r = new FileReader();
+  r.onload = ()=> { try{ const arr = JSON.parse(r.result); if(Array.isArray(arr)){ store.holidays = arr; saveStore(); alert('Libur diimport'); } else alert('Format JSON harus array'); }catch(err){ alert('Gagal baca file'); } };
+  r.readAsText(f); this.value='';
+});
+
+/* ========= Helpers ========= */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function sanitizeWa(no){ if(!no) return ''; no = no.replace(/\\s|\\+|-/g,''); if(no.startsWith('62')) return no; if(no.startsWith('0')) return '62' + no.slice(1); return no; }
+function waUrl(no, nama, judul, denda){ if(!no) return '#'; const mw = sanitizeWa(no); const msg = `Halo ${nama}, buku \"${judul}\" sudah telat dikembalikan. Denda Anda Rp${denda}.`; return `https://wa.me/${mw}?text=${encodeURIComponent(msg)}`; }
+
+/* ========= Denda calculation (exclude weekends & holidays) ========= */
+function isHoliday(dateObj){
+  const d = dateObj.toISOString().slice(0,10);
+  return store.holidays.some(h => h.date === d);
+}
+function isWeekend(dateObj){ const dow = dateObj.getDay(); return dow === 0 || dow === 6; }
+
+/* Count chargeable late days between dueDate (exclusive) and today (inclusive), excluding weekends & holidays */
+function calculateChargeableLateDays(dueDateStr){
+  if(!dueDateStr) return 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let due = new Date(dueDateStr + 'T00:00:00'); due.setHours(0,0,0,0);
+  if(today <= due) return 0;
+  let count = 0; let cur = new Date(due); cur.setDate(cur.getDate()+1);
+  while(cur <= today){
+    if(!isWeekend(cur) && !isHoliday(cur)) count++;
+    cur.setDate(cur.getDate()+1);
+  }
+  return count;
+}
+function calcDenda(tglKembaliStr){
+  const chargeable = calculateChargeableLateDays(tglKembaliStr);
+  if(chargeable > 7) return (chargeable - 7) * 2000;
+  return 0;
+}
+
+/* ========= Entries CRUD & forms ========= */
+function addEntry(entry){ store.entries.push(entry); saveStore(); }
+function removeEntry(index){ if(confirm('Hapus data ini?')){ store.entries.splice(index,1); saveStore(); } }
+
+document.getElementById('peminjamanForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const nama = document.getElementById('nama').value.trim();
+  const kelas = document.getElementById('kelas').value.trim();
+  const judul = document.getElementById('judul').value.trim();
+  const tglPinjam = document.getElementById('tglPinjam').value;
+  const tglKembali = document.getElementById('tglKembali').value;
+  const noWa = sanitizeWa(document.getElementById('noWa').value.trim());
+  if(!nama || !kelas || !judul || !tglPinjam || !tglKembali){ alert('Lengkapi kolom wajib'); return; }
+  const entry = { nama, kelas, judul, tglPinjam, tglKembali, noWa, created: new Date().toISOString() };
+  entry.denda = calcDenda(entry.tglKembali);
+  addEntry(entry);
+  this.reset();
+  navigate('dashboard');
+  alert('Data peminjaman tersimpan.');
+});
+
+/* Buku select auto-fill */
+function isiJudulOtomatis(){ const s = document.getElementById('daftarBuku'); const i = document.getElementById('judul'); if(s.value && s.value!=='Manual') i.value = s.value; else i.value = ''; }
+
+/* ========= Render tables & stats ========= */
+function renderAll(){ renderTables(); renderHolidays(); updateStats(); updateTopBooks(); updateDashboard(); renderCardPreviewIfAny(); }
+function renderTables(){
+  const tbody = document.querySelector('#tablePerpus tbody'); tbody.innerHTML='';
+  store.entries.forEach((d,i)=>{
+    d.denda = calcDenda(d.tglKembali);
+    const waLink = d.noWa ? `<a href="${waUrl(d.noWa,d.nama,d.judul,d.denda||0)}" target="_blank">Chat</a>` : '-';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(d.nama)}</td><td>${escapeHtml(d.kelas)}</td><td>${escapeHtml(d.judul)}</td><td>${formatDate(d.tglPinjam)}</td><td>${formatDate(d.tglKembali)}</td><td>${d.denda ? 'Rp ' + numberWithCommas(d.denda) : 'Rp 0'}</td><td><button class="btn ghost" onclick="finalizeReturn(${i})">Selesai</button> <button class="btn ghost" onclick="removeEntry(${i})">Hapus</button> ${waLink}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Dashboard table
+  const th = document.querySelector('#tableHome tbody'); if(th){ th.innerHTML=''; store.entries.slice().reverse().slice(0,20).forEach((d,i)=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(d.nama)}</td><td>${escapeHtml(d.kelas)}</td><td>${escapeHtml(d.judul)}</td><td>${formatDate(d.tglPinjam)}</td><td>${formatDate(d.tglKembali)}</td><td>${d.denda ? 'Rp ' + numberWithCommas(d.denda) : 'Rp 0'}</td><td><button class="btn ghost" onclick="finalizeReturn(${store.entries.length-1-i})">Konfirmasi</button></td>`; th.appendChild(tr); }); }
+}
+
+function updateStats(){ document.getElementById('statTotal').textContent = store.entries.length; document.getElementById('userBadge').textContent = getSession() ? getSession().user : ''; document.getElementById('statTotal').setAttribute('aria-live','polite'); }
+function updateTopBooks(){
+  const counts = {}; store.entries.forEach(e => counts[e.judul] = (counts[e.judul]||0) + 1);
+  const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('topBooks').innerHTML = arr.length ? arr.map(a=>`${escapeHtml(a[0])} — ${a[1]}x`).join('<br>') : '<div class="muted-small">Belum ada peminjaman.</div>';
+}
+function updateDashboard(){ updateStats(); updateTopBooks(); }
+
+/* finalize return */
+function finalizeReturn(index){
+  const e = store.entries[index];
+  if(!e) return;
+  const dendaNow = calcDenda(e.tglKembali);
+  if(dendaNow > 0 && e.noWa){
+    if(confirm('Kirim notifikasi WhatsApp tentang denda?')) window.open(waUrl(e.noWa,e.nama,e.judul,dendaNow), '_blank');
+  }
+  alert(`Pengembalian dicatat. Denda: Rp ${numberWithCommas(dendaNow)}`);
+  store.entries.splice(index,1);
+  saveStore();
+}
+
+/* ========= Exports & imports ========= */
+function download(filename, content, mime){
+  const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+function exportAllCSV(){
+  if(!store.entries.length){ alert('Belum ada data.'); return; }
+  const rows = [['Nama','Kelas','Buku','TglPinjam','TglKembali','Denda','WA','Created']];
+  store.entries.forEach(d => rows.push([d.nama,d.kelas,d.judul,d.tglPinjam,d.tglKembali,d.denda||0,d.noWa||'',d.created||'']));
+  const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\\n');
+  download('data_perpustakaan.csv', csv, 'text/csv');
+}
+document.getElementById('exportCsvBtnSide').addEventListener('click', exportAllCSV);
+document.getElementById('exportJsonBtnSide').addEventListener('click', ()=> { download('data_perpustakaan_backup.json', JSON.stringify(store,null,2), 'application/json'); });
+
+/* XLSX export (if lib available) */
+document.getElementById('exportXlsxBtn').addEventListener('click', ()=> {
+  try{
+    if(typeof XLSX === 'undefined'){ alert('XLSX library tidak tersedia (offline). Gunakan JSON/CSV.'); return; }
+    const ws = XLSX.utils.json_to_sheet(store.entries.map(e=>({Nama:e.nama,Kelas:e.kelas,Buku:e.judul,TglPinjam:e.tglPinjam,TglKembali:e.tglKembali,Denda:e.denda||0,WA:e.noWa||'',Created:e.created||''})));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Peminjaman');
+    const wbout = XLSX.write(wb,{bookType:'xlsx', type:'array'});
+    download('data_perpustakaan.xlsx', wbout, 'application/octet-stream');
+  }catch(err){ alert('Gagal buat XLSX: ' + err.message); }
+});
+
+/* Import file (JSON/CSV/XLSX) */
+const importFileEl = document.createElement('input'); importFileEl.type='file'; importFileEl.accept='.json,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+importFileEl.addEventListener('change', function(){
+  const f = this.files[0]; if(!f) return;
+  const name = f.name.toLowerCase(); const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      if(name.endsWith('.json')){ const imported = JSON.parse(reader.result); if(imported && imported.entries){ store = imported; saveStore(); alert('Backup JSON berhasil dipulihkan.'); } else if(Array.isArray(imported)){ store.entries = store.entries.concat(imported); saveStore(); alert('Data entries diimport.'); } else alert('Format JSON tidak dikenali.'); }
+      else if(name.endsWith('.csv')){ const txt = reader.result; const rows = txt.split(/\\r?\\n/).filter(r=>r.trim()!=='').map(r=>r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(c=>c.replace(/^"|"$/g,''))); const header = rows.shift().map(h=>h.trim().toLowerCase()); const entries = rows.map(r=>{ const obj = {}; header.forEach((h,i)=> obj[h]=r[i]||''); return { nama: obj['nama']||'', kelas: obj['kelas']||'', judul: obj['buku']||obj['judul']||'', tglPinjam: obj['tglpinjam']||'', tglKembali: obj['tglkembali']||'', noWa: obj['wa']||'', denda: Number(obj['denda']||0), created: new Date().toISOString() }; }); store.entries = store.entries.concat(entries); saveStore(); alert('CSV berhasil diimport.'); }
+      else if(name.endsWith('.xlsx')||name.endsWith('.xls')){ if(typeof XLSX === 'undefined'){ alert('XLSX lib tidak tersedia.'); return; } const data = new Uint8Array(reader.result); const wb = XLSX.read(data,{type:'array'}); const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1}); const header = aoa.shift().map(h=>String(h).toLowerCase()); const entries = aoa.map(r=>{ const obj={}; header.forEach((h,i)=> obj[h]=r[i]||''); return { nama: obj['nama']||'', kelas: obj['kelas']||'', judul: obj['buku']||obj['judul']||'', tglPinjam: obj['tglpinjam']||'', tglKembali: obj['tglkembali']||'', noWa: obj['wa']||'', denda: Number(obj['denda']||0), created: new Date().toISOString() }; }); store.entries = store.entries.concat(entries); saveStore(); alert('XLSX berhasil diimport.'); }
+      else alert('Format file tidak didukung.');
+    }catch(err){ alert('Gagal impor: ' + err.message); }
+  };
+  if(name.endsWith('.xlsx')||name.endsWith('.xls')) reader.readAsArrayBuffer(f); else reader.readAsText(f);
+  this.value='';
+});
+/* attach import to settings panel via button */
+document.getElementById('exportJsonBtn').addEventListener('click', ()=> importFileEl.click());
+
+/* ========= Utilities ========= */
+function numberWithCommas(x){ return x.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.'); }
+function formatDate(d){ if(!d) return '-'; const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString(); }
+
+/* ========= Card preview ========= */
+function previewCard(){
+  const nama = document.getElementById('memberNama').value || '-';
+  const kelas = document.getElementById('memberKelas').value || '-';
+  const nis = document.getElementById('memberNis').value || '-';
+  const html = `
+    <div class="member-card">
+      <div style="width:72px;height:72px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800">SMW</div>
+      <div>
+        <div style="font-weight:700">${escapeHtml(nama)}</div>
+        <div class="muted-small">Kelas: ${escapeHtml(kelas)}</div>
+        <div class="muted-small">No. Anggota: ${escapeHtml(nis)}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px"><button class="btn" onclick="window.print()">Cetak Kartu</button></div>`;
+  document.getElementById('previewArea').innerHTML = html;
+}
+
+/* ========= Small UX & startup ========= */
+function clearLocalData(){ if(confirm('Hapus semua data peminjaman?')){ store.entries = []; saveStore(); alert('Data dihapus.'); } }
+function renderCardPreviewIfAny(){ /* placeholder */ }
+
+/* Init */
+loadStore();
+if(checkAuth()){ showApp(); navigate('dashboard'); } else { showLogin(); }
+renderAll();
+
+/* Small additional: click row -> open pengembalian (dashboard UX) */
+document.querySelector('#tableHome tbody').addEventListener('click', function(e){
+  const tr = e.target.closest('tr'); if(!tr) return;
+  navigate('perpustakaan'); window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* allow clicking perpus nav from many places */
+document.getElementById('exportJsonBtnSide').addEventListener('click', ()=> { download('data_perpustakaan_backup.json', JSON.stringify(store,null,2), 'application/json'); });
+
+</script>
+</body>
+</html>
